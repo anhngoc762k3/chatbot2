@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify, render_template
 from g4f.client import Client
 import pdfplumber
 
-# Chỉ dùng WindowsSelectorEventLoopPolicy trên Windows
+# Chỉ dùng WindowsSelectorEventLoopPolicy trên WindowsS
 if platform.system() == "Windows":
     from asyncio import WindowsSelectorEventLoopPolicy
     asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
@@ -25,7 +25,7 @@ def read_pdf(file_path):
     except Exception as e:
         return f"Lỗi khi đọc file PDF: {str(e)}"
 
-pdf_file_path = "D1.pdf"
+pdf_file_path = "DOL.pdf"
 pdf_text = read_pdf(pdf_file_path)
 
 # Hàm xử lý câu hỏi
