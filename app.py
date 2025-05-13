@@ -6,7 +6,6 @@ from flask import Flask, request, jsonify, render_template
 from g4f.client import Client
 import pdfplumber
 
-# Chỉ dùng WindowsSelectorEventLoopPolicy trên Windows
 if platform.system() == "Windows":
     from asyncio import WindowsSelectorEventLoopPolicy
     asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
@@ -14,7 +13,6 @@ if platform.system() == "Windows":
 client = Client()
 app = Flask(__name__)
 
-# Đọc PDF 1 lần duy nhất khi khởi động server
 def read_pdf(file_path):
     try:
         with pdfplumber.open(file_path) as pdf:
@@ -28,25 +26,29 @@ def read_pdf(file_path):
 pdf_file_path = "D1.pdf"
 pdf_text = read_pdf(pdf_file_path)
 
-# Hàm xử lý câu hỏi
+# ✅ CHỈNH SỬA PROMPT để gợi ý model trả về cú pháp Markdown cho link
 def generate_response(question, pdf_text):
     try:
         context = pdf_text[:6000] if len(pdf_text) > 6000 else pdf_text
-        prompt = f"Đây là một đoạn văn từ tài liệu: {context}\n\nCâu hỏi: {question}\nTrả lời:"
+        prompt = f"""Đây là một đoạn văn từ tài liệu: {context}
+
+        Trả lời câu hỏi dưới đây. Nếu có chèn liên kết, hãy dùng cú pháp Markdown: [Tên liên kết](https://example.com)
+        Ví dụ: [MÁY TÍNH](https://maytinh.com)
+
+        Câu hỏi: {question}
+        Trả lời:"""
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
         )
         return response.choices[0].message.content
     except Exception as e:
         return f"❌ Đã xảy ra lỗi khi tạo phản hồi: {str(e)}"
 
-# Giao diện web
 @app.route("/")
 def index():
     return render_template("index.html")
 
-# API trả lời câu hỏi
 @app.route("/ask", methods=["POST"])
 def ask():
     data = request.get_json()
