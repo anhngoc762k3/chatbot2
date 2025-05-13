@@ -1,17 +1,33 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot Hỏi Đáp PDF</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Chatbot Hỏi Đáp Tài Liệu</h1>
+        <div id="chatbox" class="chatbox"></div>
+
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Nhập câu hỏi..." onkeydown="checkEnter(event)">
+            <button onclick="sendQuestion()">Gửi</button>
+        </div>
+    </div>
+
 <script>
-    function linkify(text) {
-        // ✅ Tìm và thay markdown links dạng [Tên](URL)
-        const markdownLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
-        return text.replace(markdownLinkRegex, function(_, label, url) {
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+     function linkify(text) {
+        const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
+        return text.replace(urlRegex, function(url) {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
         });
     }
-
     function addMessage(sender, text) {
         const chatbox = document.getElementById("chatbox");
         const message = document.createElement("div");
         message.className = `message ${sender}`;
-        message.innerHTML = `<div class="bubble">${linkify(text).replace(/\n/g, "<br>")}</div>`;
+        message.innerHTML = `<div class="bubble">${text.replace(/\n/g, "<br>")}</div>`;
         chatbox.appendChild(message);
         chatbox.scrollTop = chatbox.scrollHeight;
     }
@@ -34,7 +50,7 @@
         .then(data => {
             const pending = document.querySelector(".bot:last-child .bubble");
             if (pending && pending.innerHTML.includes("Đang suy nghĩ")) {
-                pending.innerHTML = linkify(data.answer).replace(/\n/g, "<br>");
+                pending.innerHTML = linkify(data.answer.replace(/\n/g, "<br>"));
             } else {
                 addMessage("bot", data.answer);
             }
@@ -51,3 +67,5 @@
         }
     }
 </script>
+</body>
+</html>
