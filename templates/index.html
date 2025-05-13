@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Chatbot Hỏi Đáp PDF</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="container">
-        <h1>📚 Chatbot Hỏi Đáp Tài Liệu</h1>
-        <div id="chatbox" class="chatbox"></div>
+    <div class="container py-5">
+        <h1 class="text-center mb-4">📚 Chatbot Hỏi Đáp Tài Liệu</h1>
 
-        <div class="upload-area">
-            <input type="file" id="file-upload" accept="application/pdf">
-            <button onclick="uploadFile()">📄 Tải lên tài liệu</button>
+        <div id="chatbox" class="chatbox border rounded p-3 mb-4" style="height: 300px; overflow-y: auto;"></div>
+
+        <!-- Upload file PDF -->
+        <div class="mb-4">
+            <label for="file-upload" class="form-label fw-bold">📄 Tải lên file PDF của bạn:</label>
+            <div class="input-group">
+                <input class="form-control" type="file" id="file-upload" accept="application/pdf">
+                <button class="btn btn-primary" onclick="uploadFile()">Tải lên</button>
+            </div>
+            <div id="upload-status" class="form-text mt-1 text-muted"></div>
         </div>
 
-        <div class="input-area">
-            <input type="text" id="user-input" placeholder="Nhập câu hỏi..." onkeydown="checkEnter(event)">
-            <button onclick="sendQuestion()">Gửi</button>
+        <!-- Gửi câu hỏi -->
+        <div class="input-group mb-3">
+            <input type="text" id="user-input" class="form-control" placeholder="Nhập câu hỏi..." onkeydown="checkEnter(event)">
+            <button class="btn btn-success" onclick="sendQuestion()">Gửi</button>
         </div>
     </div>
 
@@ -27,14 +35,19 @@
     function uploadFile() {
         const fileInput = document.getElementById("file-upload");
         const file = fileInput.files[0];
+        const status = document.getElementById("upload-status");
 
         if (!file) {
-            alert("Vui lòng chọn một file PDF!");
+            status.textContent = "❗ Vui lòng chọn một file PDF!";
+            status.className = "form-text text-danger";
             return;
         }
 
         const formData = new FormData();
         formData.append("file", file);
+
+        status.textContent = "⏳ Đang tải lên...";
+        status.className = "form-text text-info";
 
         fetch("/upload", {
             method: "POST",
@@ -43,14 +56,17 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert("✅ Tải lên thành công!");
                 pdfText = data.text;
+                status.textContent = "✅ Tải lên thành công!";
+                status.className = "form-text text-success";
             } else {
-                alert("❌ Lỗi khi tải lên file: " + data.message);
+                status.textContent = "❌ Lỗi: " + data.message;
+                status.className = "form-text text-danger";
             }
         })
         .catch(error => {
-            alert("❌ Lỗi khi tải lên file.");
+            status.textContent = "❌ Lỗi kết nối khi tải lên.";
+            status.className = "form-text text-danger";
             console.error(error);
         });
     }
