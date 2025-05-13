@@ -7,8 +7,14 @@
 </head>
 <body>
     <div class="container">
-        <h1>📚 Chatbot222 Hỏi Đáp Tài Liệu</h1>
+        <h1>📚 Chatbot Hỏi Đáp Tài Liệu</h1>
         <div id="chatbox" class="chatbox"></div>
+
+        <!-- Form để upload file -->
+        <div class="upload-area">
+            <input type="file" id="file-upload" accept="application/pdf">
+            <button onclick="uploadFile()">Tải lên tài liệu</button>
+        </div>
 
         <div class="input-area">
             <input type="text" id="user-input" placeholder="Nhập câu hỏi..." onkeydown="checkEnter(event)">
@@ -17,18 +23,38 @@
     </div>
 
 <script>
-    let urlMap = {};
+    let pdfText = ""; // Biến lưu trữ văn bản PDF sau khi tải lên
 
-    // Load file d.json từ static
-    fetch("/static/d.json")
+    // Hàm xử lý upload file
+    function uploadFile() {
+        const fileInput = document.getElementById("file-upload");
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert("Vui lòng chọn một file PDF!");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        // Gửi file PDF lên server
+        fetch("/upload", {
+            method: "POST",
+            body: formData
+        })
         .then(response => response.json())
-        .then(data => { urlMap = data; });
-
-    function linkify(text) {
-        const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
-        return text.replace(urlRegex, function(url) {
-            const label = urlMap[url] || url;
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+        .then(data => {
+            if (data.success) {
+                alert("Tải lên thành công!");
+                pdfText = data.text; // Lưu trữ văn bản từ file PDF
+            } else {
+                alert("Lỗi khi tải lên file.");
+            }
+        })
+        .catch(error => {
+            console.error("Lỗi:", error);
+            alert("Đã xảy ra lỗi khi tải lên.");
         });
     }
 
@@ -52,8 +78,8 @@
 
         fetch("/ask", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question })
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({question, pdfText})
         })
         .then(response => response.json())
         .then(data => {
@@ -61,7 +87,7 @@
             if (pending && pending.innerHTML.includes("Đang suy nghĩ")) {
                 pending.innerHTML = linkify(data.answer.replace(/\n/g, "<br>"));
             } else {
-                addMessage("bot", linkify(data.answer));
+                addMessage("bot", data.answer);
             }
         })
         .catch(error => {

@@ -1,4 +1,3 @@
-# app.py
 import asyncio
 import platform
 import os
@@ -26,7 +25,7 @@ def read_pdf(file_path):
         return f"Lỗi khi đọc file PDF: {str(e)}"
 
 pdf_file_path = "D1.pdf"
-pdf_text = read_pdf(pdf_file_path)
+pdf_text = read_pdf(pdf_file_path)  # Đọc dữ liệu từ file PDF mặc định
 
 # Hàm xử lý câu hỏi
 def generate_response(question, pdf_text):
@@ -51,8 +50,32 @@ def index():
 def ask():
     data = request.get_json()
     question = data.get("question", "")
-    answer = generate_response(question, pdf_text)
+    user_pdf_text = data.get("pdfText", "")
+    combined_text = pdf_text + "\n" + user_pdf_text  # Kết hợp dữ liệu mặc định và dữ liệu người dùng
+    answer = generate_response(question, combined_text)
     return jsonify({"answer": answer})
+
+# API xử lý tải lên file PDF
+@app.route("/upload", methods=["POST"])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"success": False, "message": "Không có file PDF trong yêu cầu."})
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"success": False, "message": "Không có file PDF được chọn."})
+
+    try:
+        # Lưu tạm thời file PDF
+        file_path = os.path.join("uploads", file.filename)
+        file.save(file_path)
+
+        # Đọc nội dung của file PDF
+        text = read_pdf(file_path)
+
+        return jsonify({"success": True, "text": text})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 4000))
