@@ -10,10 +10,9 @@
         <h1>📚 Chatbot Hỏi Đáp Tài Liệu</h1>
         <div id="chatbox" class="chatbox"></div>
 
-        <!-- Form để upload file -->
         <div class="upload-area">
             <input type="file" id="file-upload" accept="application/pdf">
-            <button onclick="uploadFile()">Tải lên tài liệu</button>
+            <button onclick="uploadFile()">📄 Tải lên tài liệu</button>
         </div>
 
         <div class="input-area">
@@ -23,9 +22,8 @@
     </div>
 
 <script>
-    let pdfText = ""; // Biến lưu trữ văn bản PDF sau khi tải lên
+    let pdfText = "";
 
-    // Hàm xử lý upload file
     function uploadFile() {
         const fileInput = document.getElementById("file-upload");
         const file = fileInput.files[0];
@@ -38,7 +36,6 @@
         const formData = new FormData();
         formData.append("file", file);
 
-        // Gửi file PDF lên server
         fetch("/upload", {
             method: "POST",
             body: formData
@@ -46,15 +43,15 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert("Tải lên thành công!");
-                pdfText = data.text; // Lưu trữ văn bản từ file PDF
+                alert("✅ Tải lên thành công!");
+                pdfText = data.text;
             } else {
-                alert("Lỗi khi tải lên file.");
+                alert("❌ Lỗi khi tải lên file: " + data.message);
             }
         })
         .catch(error => {
-            console.error("Lỗi:", error);
-            alert("Đã xảy ra lỗi khi tải lên.");
+            alert("❌ Lỗi khi tải lên file.");
+            console.error(error);
         });
     }
 
@@ -85,7 +82,7 @@
         .then(data => {
             const pending = document.querySelector(".bot:last-child .bubble");
             if (pending && pending.innerHTML.includes("Đang suy nghĩ")) {
-                pending.innerHTML = linkify(data.answer.replace(/\n/g, "<br>"));
+                pending.innerHTML = data.answer.replace(/\n/g, "<br>");
             } else {
                 addMessage("bot", data.answer);
             }
