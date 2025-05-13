@@ -17,12 +17,21 @@
     </div>
 
 <script>
-     function linkify(text) {
+    let urlMap = {};
+
+    // Load file d.json từ static
+    fetch("/static/d.json")
+        .then(response => response.json())
+        .then(data => { urlMap = data; });
+
+    function linkify(text) {
         const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
         return text.replace(urlRegex, function(url) {
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+            const label = urlMap[url] || url;
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
         });
     }
+
     function addMessage(sender, text) {
         const chatbox = document.getElementById("chatbox");
         const message = document.createElement("div");
@@ -43,8 +52,8 @@
 
         fetch("/ask", {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({question})
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question })
         })
         .then(response => response.json())
         .then(data => {
@@ -52,7 +61,7 @@
             if (pending && pending.innerHTML.includes("Đang suy nghĩ")) {
                 pending.innerHTML = linkify(data.answer.replace(/\n/g, "<br>"));
             } else {
-                addMessage("bot", data.answer);
+                addMessage("bot", linkify(data.answer));
             }
         })
         .catch(error => {
