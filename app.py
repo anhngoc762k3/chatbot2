@@ -2,11 +2,13 @@
 import asyncio
 import platform
 import os
+import json
+import re
 from flask import Flask, request, jsonify, render_template
 from g4f.client import Client
 import pdfplumber
 
-# Chỉ dùng WindowsSelectorEventLoopPolicy trên WindowsS
+# Chỉ dùng WindowsSelectorEventLoopPolicy trên Windows
 if platform.system() == "Windows":
     from asyncio import WindowsSelectorEventLoopPolicy
     asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
@@ -28,16 +30,35 @@ def read_pdf(file_path):
 pdf_file_path = "DOL.pdf"
 pdf_text = read_pdf(pdf_file_path)
 
+# Đọc file JSON link
+def load_link_dict():
+    try:
+        with open("static/d.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Lỗi khi đọc file d.json: {str(e)}")
+        return {}
+
+link_dict = load_link_dict()
+
+# Hàm chèn link vào phản hồi
+def insert_links(answer, link_dict):
+    for url, label in link_dict.items():
+        pattern = re.compile(re.escape(label), re.IGNORECASE)
+        answer = pattern.sub(f'<a href="{url}" target="_blank" rel="noopener noreferrer">{label}</a>', answer)
+    return answer
+
 # Hàm xử lý câu hỏi
 def generate_response(question, pdf_text):
     try:
         context = pdf_text[:6000] if len(pdf_text) > 6000 else pdf_text
         prompt = f"Đây là một đoạn văn từ tài liệu: {context}\n\nCâu hỏi: {question}\nTrả lời:"
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  
+            model="gpt-4o-mini",
             messages=[{"role": "user", "content": prompt}],
         )
-        return response.choices[0].message.content
+        raw_answer = response.choices[0].message.content
+        return insert_links(raw_answer, link_dict)
     except Exception as e:
         return f"❌ Đã xảy ra lỗi khi tạo phản hồi: {str(e)}"
 
