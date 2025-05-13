@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot Hỏi Đáp PDF</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Chatbot Hỏi Đáp Tài Liệu</h1>
+        <div id="chatbox" class="chatbox"></div>
+
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Nhập câu hỏi..." onkeydown="checkEnter(event)">
+            <button onclick="sendQuestion()">Gửi</button>
+        </div>
+    </div>
+
+<script>
+     function linkify(text) {
+        const urlRegex = /(https?:\/\/[^\s<>"]+)/g;
+        return text.replace(urlRegex, function(url) {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        });
+    }
+    function addMessage(sender, text) {
+        const chatbox = document.getElementById("chatbox");
+        const message = document.createElement("div");
+        message.className = `message ${sender}`;
+        message.innerHTML = `<div class="bubble">${text.replace(/\n/g, "<br>")}</div>`;
+        chatbox.appendChild(message);
+        chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    function sendQuestion() {
+        const input = document.getElementById("user-input");
+        const question = input.value.trim();
+        if (!question) return;
+
+        addMessage("user", question);
+        input.value = "";
+        addMessage("bot", "<em>🤖 Đang suy nghĩ...</em>");
+
+        fetch("/ask", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({question})
+        })
+        .then(response => response.json())
+        .then(data => {
+            const pending = document.querySelector(".bot:last-child .bubble");
+            if (pending && pending.innerHTML.includes("Đang suy nghĩ")) {
+                pending.innerHTML = linkify(data.answer.replace(/\n/g, "<br>"));
+            } else {
+                addMessage("bot", data.answer);
+            }
+        })
+        .catch(error => {
+            addMessage("bot", "❌ Lỗi kết nối máy chủ.");
+            console.error(error);
+        });
+    }
+
+    function checkEnter(event) {
+        if (event.key === "Enter") {
+            sendQuestion();
+        }
+    }
+</script>
+</body>
+</html>
